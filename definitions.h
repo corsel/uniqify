@@ -1,6 +1,7 @@
 #ifndef _DEFINITIONS_H_INCLUDED
 #define _DEFINITIONS_H_INCLUDED
 
+// TODO: define a LOG macro for else case.
 #ifdef _DEBUG
   #define LOG(msg) printf("debug - %s: %s\n", __func__, #msg);
 #endif // _DEBUG
