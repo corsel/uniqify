@@ -1,6 +1,7 @@
 #include "definitions.h"
 #include <dirent.h>
 #include <openssl/crypto.h>
+#include <openssl/sha.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,28 @@
 DIR* primary_dir = 0;
 DIR** secondary_dirs = 0;
 int num_secondary_dirs = 0;
+
+ERRCODE get_hash(char* arg_filename, HASH_VAL arg_hash)
+{
+  FILE* file = fopen(arg_filename, "r");
+  if (!file)
+  {
+    LOG(File not found.)
+    return ERR_FILE_NOT_FOUND;
+  }
+  
+  SHA_CTX context;
+  SHA1_Init(&context);
+  
+  char my_char;
+  while ((my_char = getc(file)) != EOF)
+  {
+    SHA1_Update(&context, (void*) &my_char, sizeof(char));
+  }
+  SHA1_Final(arg_hash, &context);
+  
+  return ERR_SUCCESS;
+}
 
 ERRCODE traverse_directory(DIR* arg_dir, char* arg_dir_name)
 {
@@ -26,12 +49,23 @@ ERRCODE traverse_directory(DIR* arg_dir, char* arg_dir_name)
     char* name = curr_file->d_name;
     if (strcmp(name, "..") == 0 || strcmp(name, ".") == 0)
       continue;
-    FILE* file = fopen(name, "r");
     char* long_name = malloc((strlen(arg_dir_name) + strlen(name) + 1) * sizeof(char));
     strcpy(long_name, arg_dir_name);
-    strcat(long_name, "/");
+    if (*(strchr(long_name, '\0') - 1) != '/')
+      strcat(long_name, "/");
     strcat(long_name, name);
-    printf("deneme: %s\n", long_name);
+    
+    printf("%s:\n", long_name);
+    HASH_VAL hash;
+    memset(hash, 0, sizeof(HASH_VAL));
+    get_hash(long_name, hash);
+    
+    int i = 0; printf("\n");
+    for (i = 0; i < SHA_DIGEST_LENGTH; i++)
+    {
+      printf("\n%020X", hash[i]);
+    }
+    printf("\n");
   }
 
   return ERR_SUCCESS;
@@ -56,6 +90,6 @@ int main(int argc, char* argv[])
   
   printf("fin.\n");
   int dummy = 0;
-  scanf("%d", dummy);
+  scanf("%d", &dummy);
   return 0;
 }
